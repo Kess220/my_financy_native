@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Text, TextInput, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { Text, TouchableOpacity, View, Modal, TextInput, Alert, Animated } from 'react-native';
 import { styles } from './styles';
 import CustomButton from '@/components/CustomButton';
 import { theme } from '@/theme';
@@ -10,7 +10,26 @@ export default function Signup() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [modalOpacity] = useState(new Animated.Value(0)); // Valor inicial da opacidade do modal
   const navigation = useNavigation();
+  
+
+  useEffect(() => {
+    if (error) {
+      Animated.timing(modalOpacity, {
+        toValue: 1,
+        duration: 500, // Duração da animação em milissegundos
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(modalOpacity, {
+        toValue: 0,
+        duration: 500, // Duração da animação em milissegundos
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [error, modalOpacity]);
 
   const handleSignup = async () => {
     try {
@@ -19,14 +38,32 @@ export default function Signup() {
         email,
         password,
       });
+  
       console.log('Signup successful:', response.data);
-    } catch (error) {
-      console.error('Signup error:', error);
+  
+      Alert.alert('Sucesso', 'Cadastro realizado com sucesso', [
+        { text: 'OK', onPress: () => navigation.goBack() }
+      ]);
+    } catch (error: any) {
+  
+      if (error.response && error.response.status === 400) {
+        setError('Erro ao cadastrar. Verifique todos os campos e tente novamente');
+      } 
+      else if (error.response && error.response.status === 409) {
+        setError('Email já cadastrado, escolha um email que não está sendo utilizado');
+      }
+      else {
+        setError('Erro ao cadastrar. Entre em contato com o suporte');
+      }
     }
   };
-
-  const  handleSigninPress = () => {
+  
+  const handleSigninPress = () => {
     navigation.goBack();
+  };
+
+  const closeModal = () => {
+    setError(null);
   };
 
   return (
@@ -59,6 +96,29 @@ export default function Signup() {
       />
       <CustomButton title="Cadastrar" onPress={handleSignup} />
       <Text style={styles.subtitle} onPress={handleSigninPress}>Já tem uma conta? Faça login aqui!</Text>
+      
+      <Modal
+        visible={!!error}
+        transparent={true}
+        onRequestClose={closeModal}
+      >
+        <Animated.View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            opacity: modalOpacity,
+          }}
+        >
+          <View style={styles.modalContent}>
+            <Text>{error}</Text>
+            <TouchableOpacity onPress={closeModal}>
+              <Text>Fechar</Text>
+            </TouchableOpacity>
+          </View>
+        </Animated.View>
+      </Modal>
     </View>
   );
 }
