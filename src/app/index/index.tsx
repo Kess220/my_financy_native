@@ -3,15 +3,31 @@ import {styles} from "./styles"
 import { useState } from "react";
 import CustomButton from "@/components/CustomButton";
 import { theme } from "@/theme";
+import api from "@/utils/api"
+import { router } from "expo-router";
 
 export default function Home(){
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
-    console.log('Email:', email);
-    console.log('Senha:', password);
+  const handleLogin = async () => {
+ 
+    try {
+      const response = await api.post('/sign-in', {
+  email,
+  password,
+});
+      console.log("Login successful:", response.data);
+    } catch (error) {
+      console.error("Login error:", error);
+     
+    }
   };
+
+  const handleSignupPress = () => {
+    router.navigate('/sign-up')
+  }
+  
   return (
      <View style={styles.container}>
       <Text style={styles.title}>My Financy Mobile</Text>
@@ -34,7 +50,7 @@ export default function Home(){
 
       />
      <CustomButton title="Login" onPress={handleLogin}/>
-    <Text style={styles.subtitle}>Não tem uma conta? Cadastre-se aqui!</Text>
+    <Text style={styles.subtitle} onPress={handleSignupPress}>Não tem uma conta? Cadastre-se aqui!</Text>
     </View>
    
   );
